@@ -1,34 +1,37 @@
-# Documentação de Modelagem de Dados: Alocação de Ferramentas e Relacionamentos
+# Documentação do Modelo de Banco de Dados
 
-## 1. Solução de Agregação: Alocação de Ferramentas
+Este documento detalha as soluções de modelagem aplicadas para a gestão de funcionários, projetos, ferramentas e dependentes, com foco em agregação e integridade referencial.
 
-### O Problema
+## 1. Solução de Agregação: Gestão de Ferramentas
 
-Inicialmente, havia um conflito estrutural sobre como alocar o maquinário ou equipamento:
+A problemática inicial consistia no fato de que, ao adicionar uma ferramenta diretamente a uma pessoa ou a um projeto, ela ficava "presa" a essa entidade de forma rígida.
 
-* Se a ferramenta fosse vinculada diretamente a uma **pessoa**, ela ficaria restrita e presa àquele funcionário.
-* Se a ferramenta fosse vinculada diretamente a um **projeto**, ela ficaria presa exclusivamente àquele projeto.
+### A Tabela `Trabalha`
+Para resolver isso, foi criada a tabela **Trabalha**. Ela funciona como uma entidade associativa que registra o momento exato em que um funcionário entra em um projeto.
+- **Conceito de Recibo:** A tabela gera um ID único para cada alocação, funcionando como um recibo.
+- **Vínculo da Ferramenta:** Agora, a ferramenta é ligada ao ID da tabela `Trabalha`, e não mais diretamente ao funcionário ou projeto.
+- **Logística de Devolução:** Quando o funcionário sai do projeto, o campo `fim_projeto` é preenchido. O sistema identifica o término do vínculo e, automaticamente, a ferramenta é considerada disponível para retornar ao estoque.
 
-### A Solução (Tabela `TRABALHA`)
+## 2. Auto-relacionamentos
 
-Para resolver esse impasse, foi aplicada a **Agregação**, resultando na criação da tabela intermediária `TRABALHA`.
+O projeto utiliza o conceito de auto-relacionamento em dois pontos críticos:
 
-* **Geração de ID (Recibo):** A agregação captura o momento exato em que o funcionário entra no projeto e cria um ID único para esse evento, funcionando como um "recibo" de alocação.
-* **Novo Vínculo:** A ferramenta deixa de ser ligada isoladamente ao funcionário ou ao projeto. Em vez disso, ela é vinculada ao registro da tabela `TRABALHA`.
-* **Controle de Estoque Inteligente:** Caso o funcionário saia do projeto, o sistema registra uma data no campo `FIM_PROJETO`. Dessa forma, o banco de dados reconhece automaticamente que o vínculo foi encerrado e a ferramenta é imediatamente "devolvida" ao estoque.
+### 2.1 Supervisão (Tabela Funcionário)
+Na tabela `Funcionario`, aplicamos um auto-relacionamento para hierarquia:
+- Existe uma coluna (ex: `supervisor_id`) que armazena o ID de outro funcionário.
+- Isso permite identificar quem é o supervisor de cada colaborador dentro da mesma tabela.
+
+### 2.2 Relacionamento de Ferramentas (`Usa_Ferramenta`)
+Ocorre na tabela que gerencia o uso de ferramentas, permitindo uma relação de **Muitos para Muitos (N:N)**. Isso é útil para casos onde ferramentas podem estar compostas por outras ou possuírem dependências técnicas entre si.
+
+## 3. Integridade Referencial: `DELETE ON CASCADE`
+
+Na tabela `Dependente`, é fundamental a utilização da cláusula `ON DELETE CASCADE` vinculada ao ID do funcionário.
+
+### Por que utilizar?
+1. **Evitar Registros Órfãos:** Impede que existam dependentes no banco de dados que apontam para um funcionário que já foi excluído.
+2. **Manutenção da Integridade:** Garante que a base de dados reflita a realidade do negócio (se o funcionário não existe mais na empresa, seus dependentes também devem ser removidos do sistema).
+3. **Automação:** Facilita a limpeza de dados, removendo automaticamente todas as informações vinculadas em cascata.
 
 ---
-
-## 2. Autorelacionamentos no Sistema
-
-Este modelo de banco de dados conta com a aplicação de relacionamentos internos (autorelacionamentos) em duas situações específicas:
-
-### I. Hierarquia na Tabela `FUNCIONARIO`
-
-* **Contexto:** Definição de liderança e subordinação dentro da equipe.
-* **Aplicação:** Ocorre diretamente na tabela `FUNCIONARIO`. Utilizamos o ID de um funcionário que atua como supervisor e o inserimos como chave estrangeira (`SUPERVISOR_ID`) no registro de outro funcionário. Isso cria uma hierarquia clara, significando quem é o supervisor de quem.
-
-### II. Relação `USA_FERRAMENTA` para `FERRAMENTA`
-
-* **Contexto:** Gestão do uso e associação dos equipamentos.
-* **Aplicação:** Ocorre na tabela `USA_FERRAMENTA` em relação à tabela `FERRAMENTA`. Trata-se de um relacionamento de cardinalidade **Muitos para Muitos (N:M)**, permitindo que múltiplas ferramentas sejam associadas a múltiplos contextos de uso de forma flexível e rastreável.
+*Documento gerado para fins de especificação técnica de banco de dados.*
