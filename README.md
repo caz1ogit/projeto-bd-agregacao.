@@ -1,6 +1,6 @@
 # projeto-bd-agregacao.
 TRABALHO DE INTRODUÇÃO A BANCO DE DADOS - AGREGAÇÃO
-'''
+```mermaid
 erDiagram
     %% Relacionamentos
     FUNCIONARIO ||--o{ FUNCIONARIO : "supervisiona"
@@ -42,7 +42,7 @@ erDiagram
     }
 
     USA_FERRAMENTA {
-'''
         INT ID_TRABALHA PK,FK
         INT ID_FERRAMENTA PK,FK
     }
+```
